@@ -1,6 +1,3 @@
-# Quant-Projects
-Different codes and models related to quant finance.
+# PairsTradingWebApp
+A pet project I made which using yfinance in the backend asks the user to feed in any number of stocks(maxm 10) and then calculates the correlation matrix for the list of stocks and their graphs based on the past data. It also calculates the spread between any 2 stocks at different times which can be used to analyze the prospect of Pairs Trading strategy between 2 respective stocks.
 
-1. Modern Portfolio Theory: Analysis of sector-wise portfolio creation based on Markowitz Portfolio Theory. Link for the blog on the project: https://open.substack.com/pub/quantsig/p/markowitz-portfolio-theory?r=3auvyw&utm_campaign=post&utm_medium=web
-
-2. Monte-Carlo Portfolio Creation: Analysis of sector-wise portfolio creation based on Monte-Carlo Simulations. Link for the blog on the project: https://open.substack.com/pub/quantsig/p/monte-carlo-simulation-portfolio?r=3auvyw&utm_campaign=post&utm_medium=web
