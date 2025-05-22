@@ -41,8 +41,15 @@ def load_data(ticker, start, end):
 stock_data = {}
 for ticker in stock_tickers:
     data = load_data(ticker, start_date, end_date)
-    if data is not None:
+    if data is not None and not data.empty:
         stock_data[ticker] = data
+
+if len(stock_data) == 0:
+    st.error("No valid data was loaded. Please check the stock tickers and try again.")
+else:
+    df = pd.DataFrame(stock_data)
+    # continue with rest of your code...
+
 
 # Check if any valid data was loaded
 if not stock_data:
