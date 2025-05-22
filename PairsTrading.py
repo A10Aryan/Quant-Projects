@@ -28,9 +28,11 @@ st.sidebar.write("This app performs pairs trading analysis.")
 def load_data(ticker, start, end):
     try:
         data = yf.download(ticker, start = start, end = end)
-        return data['Close']
+        if 'Close' in data and not data['Close'].empty:
+            return data['Close']
+        else:
+            return None
     except Exception as e:
-        st.error(f"Error loading data for {ticker}: {e}")
         return None
 
 # Load stock data
@@ -39,7 +41,7 @@ failed_tickers = []
 
 for ticker in stock_tickers:
     data = load_data(ticker, start_date, end_date)
-    if data is not None and not data.empty:
+    if data is not None and isinstance(data, pd.Series) and not data.empty:
         stock_data[ticker] = data
     else:
         failed_tickers.append(ticker)
@@ -51,21 +53,23 @@ else:
     if failed_tickers:
         st.warning(f"Failed to load data for: {', '.join(failed_tickers)}")
 
-    # Prepare DataFrame for line chart
-    df = pd.DataFrame(stock_data)
+    # Align all Series by date index
+    df = pd.concat(stock_data.values(), axis = 1)
+    df.columns = list(stock_data.keys())
 
-    # Calculate correlation matrix
+    # Drop any rows with missing data
+    df.dropna(inplace = True)
+
+    # Correlation matrix
     corr_matrix = df.corr()
 
-    # Plot correlation matrix using Altair
     st.title("Correlation Matrix")
     st.write("Interactive heatmap of correlation matrix")
 
-    # Convert correlation matrix to long format for Altair plotting
+    # Convert to long format for Altair
     corr_long = corr_matrix.stack().reset_index()
     corr_long.columns = ['Stock 1', 'Stock 2', 'Correlation']
 
-    # Create heatmap with Altair
     heatmap = alt.Chart(corr_long).mark_rect().encode(
         x = 'Stock 1:N',
         y = 'Stock 2:N',
@@ -77,7 +81,6 @@ else:
         title = 'Correlation Heatmap'
     ).interactive()
 
-    # Add text marks for correlation values
     text = alt.Chart(corr_long).mark_text(baseline = 'middle').encode(
         x = 'Stock 1:N',
         y = 'Stock 2:N',
@@ -89,13 +92,9 @@ else:
         )
     )
 
-    heatmap_with_text = (heatmap + text).properties(
-        title = 'Correlation Heatmap with Values'
-    )
+    st.altair_chart(heatmap + text, use_container_width = True)
 
-    st.altair_chart(heatmap_with_text, use_container_width = True)
-
-    # Display line chart
+    # Plot price chart
     st.title("Multiple Stock Prices Over Time")
     st.line_chart(df)
 
@@ -126,13 +125,12 @@ else:
         return positions
 
     # Select two stocks for spread analysis
-    selected_stocks = st.sidebar.multiselect("Select Two Stocks for Spread Analysis", list(stock_data.keys()))
+    selected_stocks = st.sidebar.multiselect("Select Two Stocks for Spread Analysis", list(df.columns))
 
     if len(selected_stocks) == 2:
         spread = df[selected_stocks[0]] - df[selected_stocks[1]]
         positions = backtest(spread)
 
-        # Plot spread and signals
         fig, ax = plt.subplots(figsize = (10, 6))
         spread.plot(ax = ax, label = 'Spread')
         ax.plot(positions[positions['long'] == 1].index, spread[positions['long'] == 1], '^', markersize = 10, color = 'g', label = 'Long Signal')
@@ -140,7 +138,6 @@ else:
         ax.legend()
         st.pyplot(fig)
 
-        # Show backtest results
         st.title("Backtest Results")
         st.write(positions)
 
